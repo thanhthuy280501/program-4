@@ -78,7 +78,6 @@ int main(int argc, char *argv[]) {
     } else {
         cerr << "Item not found in the library.\n";
     }
-}
 
         } else if (command == "switch") {
             switchMember(members, currentMember);
@@ -102,6 +101,59 @@ int main(int argc, char *argv[]) {
             for (const auto &book : library) {
                 cout << book.getISBN() << ": " << book << endl;
             }
+        else if (command == "updatedvd") {
+    string isbn;
+    cout << "Enter ISBN of the DVD to update: ";
+    cin >> isbn;
+
+    DVD* dvd = dvdList.search(isbn);
+    if (dvd) {
+        string title, director, studio;
+        int runtime;
+
+        cout << "Current Title: " << dvd->getTitle() << endl;
+        cout << "Enter New Title (leave blank to keep current): ";
+        cin.ignore();
+        getline(cin, title);
+        if (!title.empty()) dvd->setTitle(title);
+
+        cout << "Current Director: " << dvd->getDirector() << endl;
+        cout << "Enter New Director (leave blank to keep current): ";
+        getline(cin, director);
+        if (!director.empty()) dvd->setDirector(director);
+
+        cout << "Current Runtime: " << dvd->getRuntime() << " minutes\n";
+        cout << "Enter New Runtime (leave blank to keep current): ";
+        string runtimeStr;
+        getline(cin, runtimeStr);
+        if (!runtimeStr.empty()) dvd->setRuntime(stoi(runtimeStr));
+
+        cout << "Current Studio: " << dvd->getPublisher() << endl;
+        cout << "Enter New Studio (leave blank to keep current): ";
+        getline(cin, studio);
+        if (!studio.empty()) dvd->setPublisher(studio);
+
+        cout << "DVD details updated successfully.\n";
+    } else {
+        cerr << "DVD not found.\n";
+    }
+}
+            else if (command == "info") {
+    string isbn;
+    cout << "Enter ISBN to display details: ";
+    cin >> isbn;
+
+    LibraryItem* item = bookList.search(isbn); // Search in books
+    if (!item) item = dvdList.search(isbn);   // Search in DVDs
+
+    if (item) {
+        item->displayDetails(); // Call the polymorphic display function
+    } else {
+        cerr << "Item not found.\n";
+    }
+}
+
+
         } else if (command == "memberlist") {
             for (const auto &member : members) {
                 cout << member << endl;

@@ -1,7 +1,20 @@
+
+#include "link.h"
+#include "llist.h"
+#include "llist.cpp"
+#include "LibraryItem.h"
 #include "Book.h"
+#include "Book.cpp"
+#include "DVD.h"
+#include "DVD.cpp"
 #include "Member.h"
+#include "Member.cpp"
 #include <iostream>
+#include <string>
 #include <vector>
+using namespace std;
+
+
 
 using namespace std;
 
@@ -13,6 +26,8 @@ void convertAuthorToUppercase(Book &book);
 void convertAuthorToLowercase(Book &book);
 
 int main(int argc, char *argv[]) {
+    LList<Book> bookList;
+    LList<DVD> dvdList;
     if (argc != 5) {
         cerr << "Usage: " << argv[0] << " <library_input> <library_output> <member_input> <member_output>" << endl;
         return 1;
@@ -37,22 +52,34 @@ int main(int argc, char *argv[]) {
         cout << "Enter command (borrow, return, account, newbook, updatebook, titleupper, titlelower, authorupper, authorlower, search, library, memberlist, sortlibrary, sortmembers, switch, quit): ";
         cin >> command;
 
-        if (command == "borrow" && currentMember) {
+        if (command == "borrow") {
             string isbn;
             cout << "Enter ISBN to borrow: ";
             cin >> isbn;
-            Book *book = searchBookByISBN(library, isbn);
-            if (book) {
-                currentMember->borrowBook(*book);
-                cout << "Book borrowed successfully." << endl;
+
+            LibraryItem* item = bookList.search(isbn); // Search in books
+            if (!item) item = dvdList.search(isbn);   // Search in DVDs
+
+            if (item) {
+                item->borrowItem(); // Mark as borrowed
             } else {
-                cout << "Book not found." << endl;
+                cerr << "Item not found in the library.\n";
             }
-        } else if (command == "return" && currentMember) {
-            string isbn;
-            cout << "Enter ISBN to return: ";
-            cin >> isbn;
-            currentMember->returnBook(isbn);
+        } else if (command == "return") {
+    string isbn;
+    cout << "Enter ISBN to return: ";
+    cin >> isbn;
+
+    LibraryItem* item = bookList.search(isbn); // Search in books
+    if (!item) item = dvdList.search(isbn);   // Search in DVDs
+
+    if (item) {
+        item->returnItem(); // Mark as available
+    } else {
+        cerr << "Item not found in the library.\n";
+    }
+}
+
         } else if (command == "switch") {
             switchMember(members, currentMember);
         } else if (command == "sortlibrary") {
@@ -79,6 +106,32 @@ int main(int argc, char *argv[]) {
             for (const auto &member : members) {
                 cout << member << endl;
             }
+        else if (command == "newdvd") {
+    string title, director, isbn, studio;
+    int runtime;
+
+    cout << "Enter DVD Title: ";
+    cin.ignore(); // Clear input buffer
+    getline(cin, title);
+
+    cout << "Enter Director: ";
+    getline(cin, director);
+
+    cout << "Enter ISBN: ";
+    cin >> isbn;
+
+    cout << "Enter Studio: ";
+    cin.ignore();
+    getline(cin, studio);
+
+    cout << "Enter Runtime (in minutes): ";
+    cin >> runtime;
+
+    DVD newDvd(title, director, runtime, isbn, studio);
+    dvdList.append(newDvd);
+    cout << "New DVD added successfully.\n";
+}
+
         } else if (command == "quit") {
             cout << "Saving books to file..." << endl;
             saveBooksToFile(libraryOutputFile, library);

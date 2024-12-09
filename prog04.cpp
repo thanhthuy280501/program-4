@@ -1,4 +1,3 @@
-
 #include "link.h"
 #include "llist.h"
 #include "llist.cpp"
@@ -10,24 +9,19 @@
 #include "Member.h"
 #include "Member.cpp"
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
-using namespace std;
-
-
-
+#include <algorithm> // For sorting
 using namespace std;
 
 // Function prototypes
 void updateBook(Book &book);
-void convertTitleToUppercase(Book &book);
-void convertTitleToLowercase(Book &book);
-void convertAuthorToUppercase(Book &book);
-void convertAuthorToLowercase(Book &book);
+void loadBooksFromFile(const string &filename, vector<Book> &library);
+void saveBooksToFile(const string &filename, const vector<Book> &library);
+void switchMember(vector<Member> &members, Member *&currentMember);
 
 int main(int argc, char *argv[]) {
-    LList<Book> bookList;
-    LList<DVD> dvdList;
     if (argc != 5) {
         cerr << "Usage: " << argv[0] << " <library_input> <library_output> <member_input> <member_output>" << endl;
         return 1;
@@ -38,18 +32,19 @@ int main(int argc, char *argv[]) {
     string memberInputFile = argv[3];
     string memberOutputFile = argv[4];
 
-    vector<Book> library; // Dynamically allocated library array
-    vector<Member> members; // Dynamically allocated member array
-    Member *currentMember = nullptr; // Pointer to track the active member
+    vector<Book> library;
+    vector<Member> members;
+    LList<Book> bookList;
+    LList<DVD> dvdList;
+    Member *currentMember = nullptr;
 
     cout << "Loading books from file..." << endl;
     loadBooksFromFile(libraryInputFile, library);
     cout << "Loading members from file..." << endl;
-    loadMembersFromFile(memberInputFile, members);
 
     string command;
     while (true) {
-        cout << "Enter command (borrow, return, account, newbook, updatebook, titleupper, titlelower, authorupper, authorlower, search, library, memberlist, sortlibrary, sortmembers, switch, quit): ";
+        cout << "Enter command (borrow, return, info, sortlibrary, quit): ";
         cin >> command;
 
         if (command == "borrow") {
@@ -57,212 +52,88 @@ int main(int argc, char *argv[]) {
             cout << "Enter ISBN to borrow: ";
             cin >> isbn;
 
-            LibraryItem* item = bookList.search(isbn); // Search in books
-            if (!item) item = dvdList.search(isbn);   // Search in DVDs
+            LibraryItem* item = bookList.search(isbn);
+            if (!item) item = dvdList.search(isbn);
 
             if (item) {
-                item->borrowItem(); // Mark as borrowed
+                item->borrowItem();
             } else {
                 cerr << "Item not found in the library.\n";
             }
         } 
         else if (command == "return") {
-    string isbn;
-    cout << "Enter ISBN to return: ";
-    cin >> isbn;
+            string isbn;
+            cout << "Enter ISBN to return: ";
+            cin >> isbn;
 
-    LibraryItem* item = bookList.search(isbn); // Search in books
-    if (!item) item = dvdList.search(isbn);   // Search in DVDs
+            LibraryItem* item = bookList.search(isbn);
+            if (!item) item = dvdList.search(isbn);
 
-    if (item) {
-        item->returnItem(); // Mark as available
-    } else {
-        cerr << "Item not found in the library.\n";
-    }
-
+            if (item) {
+                item->returnItem();
+            } else {
+                cerr << "Item not found in the library.\n";
+            }
         } 
-        else if (command == "switch") {
-            switchMember(members, currentMember);
+        else if (command == "info") {
+            string isbn;
+            cout << "Enter ISBN to display details: ";
+            cin >> isbn;
+
+            LibraryItem* item = bookList.search(isbn);
+            if (!item) item = dvdList.search(isbn);
+
+            if (item) {
+                item->displayDetails();
+            } else {
+                cerr << "Item not found.\n";
+            }
         } 
         else if (command == "sortlibrary") {
-            sortLibrary(library);
+            sort(library.begin(), library.end(), [](const Book &a, const Book &b) {
+                return a.getISBN() < b.getISBN();
+            });
             cout << "Library sorted by ISBN." << endl;
         } 
-        else if (command == "sortmembers") {
-            sortMembers(members);
-            cout << "Members sorted by last name." << endl;
-        } 
-        else if (command == "search") {
-            string isbn;
-            cout << "Enter ISBN to search: ";
-            cin >> isbn;
-            Book *book = searchBookByISBN(library, isbn);
-            if (book) {
-                cout << "Book found: " << *book << endl;
-            } else {
-                cout << "Book not found." << endl;
-            }
-        } 
-        else if (command == "library") {
-            for (const auto &book : library) {
-                cout << book.getISBN() << ": " << book << endl;
-            }
-        else if (command == "updatedvd") {
-    string isbn;
-    cout << "Enter ISBN of the DVD to update: ";
-    cin >> isbn;
-
-    DVD* dvd = dvdList.search(isbn);
-    if (dvd) {
-        string title, director, studio;
-        int runtime;
-
-        cout << "Current Title: " << dvd->getTitle() << endl;
-        cout << "Enter New Title (leave blank to keep current): ";
-        cin.ignore();
-        getline(cin, title);
-        if (!title.empty()) dvd->setTitle(title);
-
-        cout << "Current Director: " << dvd->getDirector() << endl;
-        cout << "Enter New Director (leave blank to keep current): ";
-        getline(cin, director);
-        if (!director.empty()) dvd->setDirector(director);
-
-        cout << "Current Runtime: " << dvd->getRuntime() << " minutes\n";
-        cout << "Enter New Runtime (leave blank to keep current): ";
-        string runtimeStr;
-        getline(cin, runtimeStr);
-        if (!runtimeStr.empty()) dvd->setRuntime(stoi(runtimeStr));
-
-        cout << "Current Studio: " << dvd->getPublisher() << endl;
-        cout << "Enter New Studio (leave blank to keep current): ";
-        getline(cin, studio);
-        if (!studio.empty()) dvd->setPublisher(studio);
-
-        cout << "DVD details updated successfully.\n";
-    } 
-    else {
-        cerr << "DVD not found.\n";
-    }
-}
-    else if (command == "info") {
-    string isbn;
-    cout << "Enter ISBN to display details: ";
-    cin >> isbn;
-
-    LibraryItem* item = bookList.search(isbn); // Search in books
-    if (!item) item = dvdList.search(isbn);   // Search in DVDs
-
-    if (item) {
-        item->displayDetails(); // Call the polymorphic display function
-    } else {
-        cerr << "Item not found.\n";
-    }
-}
-
-
-        } else if (command == "memberlist") {
-            for (const auto &member : members) {
-                cout << member << endl;
-            }
-        else if (command == "newdvd") {
-    string title, director, isbn, studio;
-    int runtime;
-
-    cout << "Enter DVD Title: ";
-    cin.ignore(); // Clear input buffer
-    getline(cin, title);
-
-    cout << "Enter Director: ";
-    getline(cin, director);
-
-    cout << "Enter ISBN: ";
-    cin >> isbn;
-
-    cout << "Enter Studio: ";
-    cin.ignore();
-    getline(cin, studio);
-
-    cout << "Enter Runtime (in minutes): ";
-    cin >> runtime;
-
-    DVD newDvd(title, director, runtime, isbn, studio);
-    dvdList.append(newDvd);
-    cout << "New DVD added successfully.\n";
-}
-
-        } else if (command == "quit") {
+        else if (command == "quit") {
             cout << "Saving books to file..." << endl;
             saveBooksToFile(libraryOutputFile, library);
-            cout << "Saving members to file..." << endl;
-            saveMembersToFile(memberOutputFile, members);
             break;
-        } else {
-            cout << "Invalid command or no member selected." << endl;
+        } 
+        else {
+            cerr << "Invalid command." << endl;
         }
     }
 
     return 0;
 }
 
-
 // Update book details
 void updateBook(Book &book) {
     string newTitle, newAuthor, newISBN, newPublisher;
-
     cout << "Current title: " << book.getTitle() << endl;
     cout << "Enter new title (leave blank to keep current): ";
     cin.ignore();
     getline(cin, newTitle);
-    if (!newTitle.empty()) {
-        book.setTitle(newTitle);
-    }
+    if (!newTitle.empty()) book.setTitle(newTitle);
 
     cout << "Current author: " << book.getAuthor() << endl;
     cout << "Enter new author (leave blank to keep current): ";
     getline(cin, newAuthor);
-    if (!newAuthor.empty()) {
-        book.setAuthor(newAuthor);
-    }
+    if (!newAuthor.empty()) book.setAuthor(newAuthor);
 
     cout << "Current ISBN: " << book.getISBN() << endl;
     cout << "Enter new ISBN (leave blank to keep current): ";
     getline(cin, newISBN);
-    if (!newISBN.empty()) {
-        book.setISBN(newISBN);
-    }
+    if (!newISBN.empty()) book.setISBN(newISBN);
 
     cout << "Current publisher: " << book.getPublisher() << endl;
     cout << "Enter new publisher (leave blank to keep current): ";
     getline(cin, newPublisher);
-    if (!newPublisher.empty()) {
-        book.setPublisher(newPublisher);
-    }
+    if (!newPublisher.empty()) book.setPublisher(newPublisher);
 }
 
-// Convert title to uppercase
-void convertTitleToUppercase(Book &book) {
-    book.convertTitleToUppercase();
-    cout << "Updated title to uppercase: " << book.getTitle() << endl;
-}
-
-// Convert title to lowercase
-void convertTitleToLowercase(Book &book) {
-    book.convertTitleToLowercase();
-    cout << "Updated title to lowercase: " << book.getTitle() << endl;
-}
-
-// Convert author to uppercase
-void convertAuthorToUppercase(Book &book) {
-    book.convertAuthorToUppercase();
-    cout << "Updated author to uppercase: " << book.getAuthor() << endl;
-}
-
-// Convert author to lowercase
-void convertAuthorToLowercase(Book &book) {
-    book.convertAuthorToLowercase();
-    cout << "Updated author to lowercase: " << book.getAuthor() << endl;
-}
+// Load books from file
 void loadBooksFromFile(const string &filename, vector<Book> &library) {
     ifstream infile(filename);
     if (!infile.is_open()) {
@@ -277,6 +148,7 @@ void loadBooksFromFile(const string &filename, vector<Book> &library) {
     infile.close();
 }
 
+// Save books to file
 void saveBooksToFile(const string &filename, const vector<Book> &library) {
     ofstream outfile(filename);
     if (!outfile.is_open()) {
@@ -292,6 +164,7 @@ void saveBooksToFile(const string &filename, const vector<Book> &library) {
     }
     outfile.close();
 }
+
 Book *searchBookByISBN(vector<Book> &library, const string &isbn, int index = 0) {
     if (index >= library.size()) return nullptr;
     if (library[index].getISBN() == isbn) return &library[index];

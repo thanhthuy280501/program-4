@@ -1,5 +1,6 @@
 #include "Book.h"
 #include <algorithm>
+#include <iostream>
 
 Book::Book() : title(""), author(""), ISBN(""), publisher("") {}
 
@@ -7,6 +8,10 @@ Book::Book(string t, string a, string i, string p)
     : title(t), author(a), ISBN(i), publisher(p) {}
 
 Book::~Book() {}
+// Constructors
+Book::Book() : LibraryItem(), author("") {}
+Book::Book(const std::string &t, const std::string &a, const std::string &i, const std::string &p, const std::string &s)
+    : LibraryItem(t, i, p, s), author(a) {}
 
 // Getters
 string Book::getTitle() const { return title; }
@@ -55,5 +60,30 @@ Book *searchBookByISBN(vector<Book> &library, const string &isbn, int index = 0)
     if (library[index].getISBN() == isbn) return &library[index];
     return searchBookByISBN(library, isbn, index + 1);
 }
+// Overridden Functions
+void Book::displayDetails() const {
+    std::cout << "Book Details:\n"
+              << "Title: " << title << "\n"
+              << "Author: " << author << "\n"
+              << "ISBN: " << ISBN << "\n"
+              << "Publisher: " << publisher << "\n"
+              << "Status: " << status << "\n";
+}
+void Book::borrowItem() {
+    if (status == "available") {
+        status = "borrowed";
+        std::cout << "Book borrowed successfully.\n";
+    } else {
+        std::cout << "Book is already borrowed.\n";
+    }
+}
 
+void Book::returnItem() {
+    if (status == "borrowed") {
+        status = "available";
+        std::cout << "Book returned successfully.\n";
+    } else {
+        std::cout << "Book is already available.\n";
+    }
+}
 

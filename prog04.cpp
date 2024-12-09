@@ -65,7 +65,8 @@ int main(int argc, char *argv[]) {
             } else {
                 cerr << "Item not found in the library.\n";
             }
-        } else if (command == "return") {
+        } 
+        else if (command == "return") {
     string isbn;
     cout << "Enter ISBN to return: ";
     cin >> isbn;
@@ -79,15 +80,19 @@ int main(int argc, char *argv[]) {
         cerr << "Item not found in the library.\n";
     }
 
-        } else if (command == "switch") {
+        } 
+        else if (command == "switch") {
             switchMember(members, currentMember);
-        } else if (command == "sortlibrary") {
+        } 
+        else if (command == "sortlibrary") {
             sortLibrary(library);
             cout << "Library sorted by ISBN." << endl;
-        } else if (command == "sortmembers") {
+        } 
+        else if (command == "sortmembers") {
             sortMembers(members);
             cout << "Members sorted by last name." << endl;
-        } else if (command == "search") {
+        } 
+        else if (command == "search") {
             string isbn;
             cout << "Enter ISBN to search: ";
             cin >> isbn;
@@ -97,7 +102,8 @@ int main(int argc, char *argv[]) {
             } else {
                 cout << "Book not found." << endl;
             }
-        } else if (command == "library") {
+        } 
+        else if (command == "library") {
             for (const auto &book : library) {
                 cout << book.getISBN() << ": " << book << endl;
             }
@@ -134,11 +140,12 @@ int main(int argc, char *argv[]) {
         if (!studio.empty()) dvd->setPublisher(studio);
 
         cout << "DVD details updated successfully.\n";
-    } else {
+    } 
+    else {
         cerr << "DVD not found.\n";
     }
 }
-            else if (command == "info") {
+    else if (command == "info") {
     string isbn;
     cout << "Enter ISBN to display details: ";
     cin >> isbn;

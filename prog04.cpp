@@ -14,6 +14,17 @@
 #include <vector>
 #include <algorithm> // For sorting
 using namespace std;
+//***************************************************************************
+// Name:         Thi Thanh Thuy Nguyen
+// Program:      CSC 275 Program 4
+// Due Date:     12/09/24
+// Compiler:     C Lion
+// ***************************************************************************
+// This program is to deepen the understanding of the use of
+// inheritance, with a little bit of emphasis on polymorphism 
+// and how to implement generic data structures using 
+// templates and manage data using linked structures (i.e. through a linked list)
+//******************************************************************************
 
 // Function prototypes
 void updateBook(Book &book);

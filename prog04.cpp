@@ -16,8 +16,8 @@
 using namespace std;
 //***************************************************************************
 // Name:         Thi Thanh Thuy Nguyen
-// Program:      CSC 275 Program 4
-// Due Date:     12/09/24
+// Program:      CSC 275 Program 5
+// Due Date:     12/16/24
 // Compiler:     C Lion
 // ***************************************************************************
 // This program is to deepen the understanding of the use of

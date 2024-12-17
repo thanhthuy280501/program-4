@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm> // For sorting
 using namespace std;
+
 //***************************************************************************
 // Name:         Thi Thanh Thuy Nguyen
 // Program:      CSC 275 Program 5
@@ -40,8 +41,6 @@ public:
         return "Error: Item already exists!";
     }
 };
-
-
 
 // Function prototypes
 void loadLibrary(const string &filename, LList<LibraryItem *> &libList);
@@ -77,7 +76,11 @@ int main(int argc, char *argv[]) {
         cin.ignore(); // Clear input buffer
 
         if (command == "info") {
-            infoItem(library);
+            try {
+                infoItem(library);
+            } catch (const ItemNotFoundException &e) {
+                cerr << e.what() << endl;
+            }
         } else if (command == "library") {
             displayLibrary(library);
         } else if (command == "newitem") {
@@ -93,7 +96,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    return 0;
+    return 0; // Correctly placed return statement
 }
 
 // Load Library from File

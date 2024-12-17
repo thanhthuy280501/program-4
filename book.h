@@ -44,10 +44,16 @@ public:
     bool operator!=(const Book &other) const;
     friend ostream &operator<<(ostream &os, const Book &book);
 
-    // Overridden Functions
+    // Overridden virtual Functions
     void displayDetails() const override;
     void borrowItem() override;
     void returnItem() override;
+    virtual void updateItem() override;
+    virtual void newItem() override;
+    virtual std::string getType() const override;
+    // Getters and Setters
+    virtual std::string getAuthor() const override;
+    virtual void setAuthor(const std::string &a) override;
 };
 
 

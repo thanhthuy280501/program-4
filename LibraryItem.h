@@ -29,10 +29,28 @@ public:
     void setPublisher(const std::string &p);
     void setStatus(const std::string &s);
 
+    // Additional Virtual Getters for Derived Classes
+    virtual std::string getAuthor() const { return ""; }
+    virtual std::string getDirector() const { return ""; }
+    virtual int getRuntime() const { return 0; }
+
+    virtual void setAuthor(const std::string &a) {}
+    virtual void setDirector(const std::string &d) {}
+    virtual void setRuntime(int r) {}
+
     // Virtual Functions
     virtual void displayDetails() const = 0;
     virtual void borrowItem() = 0;
     virtual void returnItem() = 0;
+    virtual void updateItem() = 0;
+    virtual void newItem() = 0;
+
+    virtual std::string getType() const = 0; // "book" or "dvd"
+
+    // Operator Overloads
+    virtual bool operator==(const LibraryItem &other) const;
+    virtual bool operator!=(const LibraryItem &other) const;
+    virtual bool operator<=(const LibraryItem &other) const;
 };
 
 #endif

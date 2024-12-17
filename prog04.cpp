@@ -26,201 +26,201 @@ using namespace std;
 // templates and manage data using linked structures (i.e. through a linked list)
 //******************************************************************************
 
+// Custom Exceptions
+class ItemNotFoundException : public exception {
+public:
+    const char *what() const noexcept override {
+        return "Error: Item not found!";
+    }
+};
+
+class DuplicateItemException : public exception {
+public:
+    const char *what() const noexcept override {
+        return "Error: Item already exists!";
+    }
+};
+
+
+
 // Function prototypes
-void updateBook(Book &book);
-void loadBooksFromFile(const string &filename, vector<Book> &library);
-void saveBooksToFile(const string &filename, const vector<Book> &library);
-void switchMember(vector<Member> &members, Member *&currentMember);
+void loadLibrary(const string &filename, LList<LibraryItem *> &libList);
+void saveLibrary(const string &filename, const LList<LibraryItem *> &libList);
+void newItem(LList<LibraryItem *> &libList);
+void updateItem(LList<LibraryItem *> &libList);
+void displayLibrary(const LList<LibraryItem *> &libList);
+void infoItem(const LList<LibraryItem *> &libList);
 
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
-        cerr << "Usage: " << argv[0] << " <library_input> <library_output> <member_input> <member_output>" << endl;
-        return 1;
+    // Command-line argument handling
+    string libInput = "library01.txt";
+    string libOutput = "lout.txt";
+
+    try {
+        if (argc != 3) {
+            throw invalid_argument("Incorrect arguments. Defaulting to library01.txt and lout.txt.");
+        } else {
+            libInput = argv[1];
+            libOutput = argv[2];
+        }
+    } catch (const invalid_argument &e) {
+        cerr << e.what() << endl;
     }
 
-    string libraryInputFile = argv[1];
-    string libraryOutputFile = argv[2];
-    string memberInputFile = argv[3];
-    string memberOutputFile = argv[4];
-
-    vector<Book> library;
-    vector<Member> members;
-    LList<Book> bookList;
-    LList<DVD> dvdList;
-    Member *currentMember = nullptr;
-
-    cout << "Loading books from file..." << endl;
-    loadBooksFromFile(libraryInputFile, library);
-    cout << "Loading members from file..." << endl;
+    LList<LibraryItem *> library; // Single list for polymorphic library items
+    loadLibrary(libInput, library);
 
     string command;
     while (true) {
-        cout << "Enter command (borrow, return, info, sortlibrary, quit): ";
+        cout << "\nEnter command (info, library, newitem, update, quit): ";
         cin >> command;
+        cin.ignore(); // Clear input buffer
 
-        if (command == "borrow") {
-            string isbn;
-            cout << "Enter ISBN to borrow: ";
-            cin >> isbn;
-
-            LibraryItem* item = bookList.search(isbn);
-            if (!item) item = dvdList.search(isbn);
-
-            if (item) {
-                item->borrowItem();
-            } else {
-                cerr << "Item not found in the library.\n";
-            }
-        } 
-        else if (command == "return") {
-            string isbn;
-            cout << "Enter ISBN to return: ";
-            cin >> isbn;
-
-            LibraryItem* item = bookList.search(isbn);
-            if (!item) item = dvdList.search(isbn);
-
-            if (item) {
-                item->returnItem();
-            } else {
-                cerr << "Item not found in the library.\n";
-            }
-        } 
-        else if (command == "info") {
-            string isbn;
-            cout << "Enter ISBN to display details: ";
-            cin >> isbn;
-
-            LibraryItem* item = bookList.search(isbn);
-            if (!item) item = dvdList.search(isbn);
-
-            if (item) {
-                item->displayDetails();
-            } else {
-                cerr << "Item not found.\n";
-            }
-        } 
-        else if (command == "sortlibrary") {
-            sort(library.begin(), library.end(), [](const Book &a, const Book &b) {
-                return a.getISBN() < b.getISBN();
-            });
-            cout << "Library sorted by ISBN." << endl;
-        } 
-        else if (command == "quit") {
-            cout << "Saving books to file..." << endl;
-            saveBooksToFile(libraryOutputFile, library);
+        if (command == "info") {
+            infoItem(library);
+        } else if (command == "library") {
+            displayLibrary(library);
+        } else if (command == "newitem") {
+            newItem(library);
+        } else if (command == "update") {
+            updateItem(library);
+        } else if (command == "quit") {
+            saveLibrary(libOutput, library);
+            cout << "Library saved. Exiting program." << endl;
             break;
-        } 
-        else {
-            cerr << "Invalid command." << endl;
+        } else {
+            cout << "Invalid command!" << endl;
         }
     }
 
     return 0;
 }
 
-// Update book details
-void updateBook(Book &book) {
-    string newTitle, newAuthor, newISBN, newPublisher;
-    cout << "Current title: " << book.getTitle() << endl;
-    cout << "Enter new title (leave blank to keep current): ";
+// Load Library from File
+void loadLibrary(const string &filename, LList<LibraryItem *> &libList) {
+    ifstream inFile(filename);
+    if (!inFile) {
+        cerr << "Error: Could not open file " << filename << endl;
+        return;
+    }
+
+    string type, title, isbn, publisher, status, author, director;
+    int runtime;
+
+    while (inFile >> type) {
+        inFile.ignore(); // Ignore newline
+        getline(inFile, title);
+        getline(inFile, isbn);
+        getline(inFile, publisher);
+        getline(inFile, status);
+
+        if (type == "book") {
+            getline(inFile, author);
+            LibraryItem *newBook = new Book(title, isbn, publisher, author, status);
+            libList.sortedInsert(newBook);
+        } else if (type == "dvd") {
+            getline(inFile, director);
+            inFile >> runtime;
+            inFile.ignore();
+            LibraryItem *newDVD = new DVD(title, isbn, publisher, director, runtime, status);
+            libList.sortedInsert(newDVD);
+        }
+    }
+    cout << "Library loaded successfully." << endl;
+}
+
+// Save Library to File
+void saveLibrary(const string &filename, const LList<LibraryItem *> &libList) {
+    ofstream outFile(filename);
+    if (!outFile) {
+        cerr << "Error: Could not open file for saving." << endl;
+        return;
+    }
+
+    LibraryItem *item;
+    for (libList.setStart(); libList.getValue(item); libList.next()) {
+        outFile << item->getType() << endl;
+        outFile << item->getTitle() << endl;
+        outFile << item->getISBN() << endl;
+        outFile << item->getPublisher() << endl;
+        outFile << item->getStatus() << endl;
+
+        if (item->getType() == "book") {
+            outFile << item->getAuthor() << endl;
+        } else if (item->getType() == "dvd") {
+            outFile << item->getDirector() << endl;
+            outFile << item->getRuntime() << endl;
+        }
+    }
+    cout << "Library saved successfully." << endl;
+}
+
+// Add New Item
+void newItem(LList<LibraryItem *> &libList) {
+    string type;
+    cout << "Enter item type (book/dvd): ";
+    cin >> type;
     cin.ignore();
-    getline(cin, newTitle);
-    if (!newTitle.empty()) book.setTitle(newTitle);
 
-    cout << "Current author: " << book.getAuthor() << endl;
-    cout << "Enter new author (leave blank to keep current): ";
-    getline(cin, newAuthor);
-    if (!newAuthor.empty()) book.setAuthor(newAuthor);
+    LibraryItem *newItem;
+    try {
+        if (type == "book") {
+            newItem = new Book();
+        } else if (type == "dvd") {
+            newItem = new DVD();
+        } else {
+            cout << "Invalid item type!" << endl;
+            return;
+        }
 
-    cout << "Current ISBN: " << book.getISBN() << endl;
-    cout << "Enter new ISBN (leave blank to keep current): ";
-    getline(cin, newISBN);
-    if (!newISBN.empty()) book.setISBN(newISBN);
-
-    cout << "Current publisher: " << book.getPublisher() << endl;
-    cout << "Enter new publisher (leave blank to keep current): ";
-    getline(cin, newPublisher);
-    if (!newPublisher.empty()) book.setPublisher(newPublisher);
+        newItem->newItem();
+        if (libList.search(newItem)) {
+            throw DuplicateItemException();
+        }
+        libList.sortedInsert(newItem);
+        cout << "New item added successfully." << endl;
+    } catch (const DuplicateItemException &e) {
+        cerr << e.what() << endl;
+        delete newItem; // Avoid memory leak
+    }
 }
 
-// Load books from file
-void loadBooksFromFile(const string &filename, vector<Book> &library) {
-    ifstream infile(filename);
-    if (!infile.is_open()) {
-        cerr << "Error: Could not open the book file." << endl;
-        return;
-    }
+// Update Item
+void updateItem(LList<LibraryItem *> &libList) {
+    string isbn;
+    cout << "Enter ISBN of item to update: ";
+    getline(cin, isbn);
 
-    string title, author, isbn, publisher;
-    while (getline(infile, title) && getline(infile, author) && getline(infile, isbn) && getline(infile, publisher)) {
-        library.emplace_back(title, author, isbn, publisher);
-    }
-    infile.close();
-}
-
-// Save books to file
-void saveBooksToFile(const string &filename, const vector<Book> &library) {
-    ofstream outfile(filename);
-    if (!outfile.is_open()) {
-        cerr << "Error: Could not open the book file for writing." << endl;
-        return;
-    }
-
-    for (const auto &book : library) {
-        outfile << book.getTitle() << endl;
-        outfile << book.getAuthor() << endl;
-        outfile << book.getISBN() << endl;
-        outfile << book.getPublisher() << endl;
-    }
-    outfile.close();
-}
-
-Book *searchBookByISBN(vector<Book> &library, const string &isbn, int index = 0) {
-    if (index >= library.size()) return nullptr;
-    if (library[index].getISBN() == isbn) return &library[index];
-    return searchBookByISBN(library, isbn, index + 1);
-}
-Book* binarySearchByISBN(vector<Book> &library, const string &isbn, int left, int right) {
-    if (left > right) {
-        return nullptr; // Base case: ISBN not found
-    }
-
-    int mid = left + (right - left) / 2; // Calculate mid-point
-
-    if (library[mid].getISBN() == isbn) {
-        return &library[mid]; // ISBN found
-    } else if (library[mid].getISBN() > isbn) {
-        return binarySearchByISBN(library, isbn, left, mid - 1); // Search left half
+    LibraryItem *item = libList.search(isbn);
+    if (item) {
+        item->updateItem();
+        cout << "Item updated successfully." << endl;
     } else {
-        return binarySearchByISBN(library, isbn, mid + 1, right); // Search right half
+        cerr << "Error: Item not found!" << endl;
     }
 }
-else if (command == "search") {
+
+// Display Library
+void displayLibrary(const LList<LibraryItem *> &libList) {
+    LibraryItem *item;
+    for (libList.setStart(); libList.getValue(item); libList.next()) {
+        item->displayDetails();
+        cout << "----------------------" << endl;
+    }
+}
+
+// Info Command
+void infoItem(const LList<LibraryItem *> &libList) {
     string isbn;
     cout << "Enter ISBN: ";
-    cin >> isbn;
+    getline(cin, isbn);
 
-    if (library.empty()) {
-        cout << "The library is empty. Please add books first." << endl;
-        continue;
-    }
-
-    if (!is_sorted(library.begin(), library.end(), [](const Book &a, const Book &b) {
-        return a.getISBN() < b.getISBN();
-    })) {
-        cout << "Error: Library is not sorted. Please use the sortlibrary command first." << endl;
-        continue;
-    }
-
-    Book* foundBook = binarySearchByISBN(library, isbn, 0, library.size() - 1);
-    if (foundBook) {
-        cout << "Book found: " << *foundBook << endl;
+    LibraryItem *item = libList.search(isbn);
+    if (item) {
+        item->displayDetails();
     } else {
-        cout << "Book not found." << endl;
+        throw ItemNotFoundException();
     }
 }
-
-
-    return 0;
+return 0;
 }

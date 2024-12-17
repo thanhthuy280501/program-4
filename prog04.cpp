@@ -222,5 +222,3 @@ void infoItem(const LList<LibraryItem *> &libList) {
         throw ItemNotFoundException();
     }
 }
-return 0;
-}
